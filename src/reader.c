@@ -34,9 +34,9 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename) {
   h->output_height = height;
 
   if (h->input_width == h->output_width && h->input_height == h->output_height) {
-    snprintf(buffer, sizeof(buffer), "exec %s -loglevel error -i '%s' -f image2pipe -vcodec rawvideo -pix_fmt %s -", get_ffmpeg(), filename, ffmpeg_pixfmt2str(&pixfmt));
+    snprintf(buffer, sizeof(buffer), "exec %s -loglevel error -i '%s' -f image2pipe -vcodec rawvideo -pix_fmt %s - </dev/null", get_ffmpeg(), filename, ffmpeg_pixfmt2str(&pixfmt));
   } else {
-    snprintf(buffer, sizeof(buffer), "exec %s -loglevel error -i '%s' -vf scale=%d:%d -f image2pipe -vcodec rawvideo -pix_fmt %s -", get_ffmpeg(), filename, width, height, ffmpeg_pixfmt2str(&pixfmt));
+    snprintf(buffer, sizeof(buffer), "exec %s -loglevel error -i '%s' -vf scale=%d:%d -f image2pipe -vcodec rawvideo -pix_fmt %s - </dev/null", get_ffmpeg(), filename, width, height, ffmpeg_pixfmt2str(&pixfmt));
   }
   printf("cmd: %s\n", buffer);
 
