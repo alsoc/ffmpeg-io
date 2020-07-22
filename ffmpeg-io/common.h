@@ -39,9 +39,12 @@ typedef enum ffmpeg_error {
   ffmpeg_unknown_error,
 } ffmpeg_error;
 
+typedef struct ffmpeg_ratio {
+  unsigned num, den;
+} ffmpeg_ratio;
 typedef struct ffmpeg_descriptor {
   unsigned width, height;
-  unsigned fps_num, fps_den;
+  ffmpeg_ratio fps;
   ffmpeg_pixfmt pixfmt;
 } ffmpeg_descriptor;
 typedef struct ffmpeg_handle {
@@ -50,9 +53,13 @@ typedef struct ffmpeg_handle {
   int error;
 } ffmpeg_handle;
 typedef struct ffmpeg_options {
-  int debug;
-  int keep_ratio;
+  const char* window_title;
   ffmpeg_codec codec;
+  unsigned buffer;
+  unsigned debug:1;
+  unsigned force_input_fps:1;
+  unsigned lossless:1;
+  unsigned keep_aspect:1;
 } ffmpeg_options;
 
 size_t ffmpeg_pixel_size(ffmpeg_pixfmt);

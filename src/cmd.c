@@ -25,3 +25,6 @@ const char* get_ffmpeg() {
 const char* get_ffprobe() {
   return get("ffprobe", "avprobe", NULL);
 }
+const char* get_ffplay() {
+  return get("ffplay", "avplay", NULL);
+}

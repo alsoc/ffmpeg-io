@@ -3,7 +3,7 @@ CFLAGS_LIBS=
 LD_LIBS=-Llib -lffmpeg-io
 
 
-LIBSRC=cmd.c common.c probe.c reader.c writer.c formatter.c
+LIBSRC=cmd.c common.c probe.c reader.c player.c writer.c formatter.c
 TESTSRC=main.c
 
 LIBOBJS=$(foreach file,$(LIBSRC),obj/$(file).o)

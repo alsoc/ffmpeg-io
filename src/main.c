@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ffmpeg-io/reader.h"
+#include "ffmpeg-io/player.h"
 #include "ffmpeg-io/writer.h"
 
 void usage(FILE* f, const char* cmd) {
@@ -103,9 +104,16 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "error: %s\n", ffmpeg_error2str(reader.error));
     goto cleanup;
   }
-  if (!ffmpeg_start_writer(&writer, output, &options)) {
-    fprintf(stderr, "error: %s\n", ffmpeg_error2str(writer.error));
-    goto cleanup;
+  if (strcmp(output, "play") != 0) {
+    if (!ffmpeg_start_writer(&writer, output, &options)) {
+      fprintf(stderr, "error: %s\n", ffmpeg_error2str(writer.error));
+      goto cleanup;
+    }
+  } else {
+    if (!ffmpeg_start_player(&writer, &options)) {
+      fprintf(stderr, "error: %s\n", ffmpeg_error2str(writer.error));
+      goto cleanup;
+    }
   }
   uint8_t *img = malloc(reader.output.width * reader.output.height * ffmpeg_pixel_size(reader.output.pixfmt));
   int i = 0;

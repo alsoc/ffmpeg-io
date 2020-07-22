@@ -122,8 +122,7 @@ void ffmpeg_compatible_writer(ffmpeg_handle* writer, const ffmpeg_handle* reader
 
   if (desc.width == 0) desc.width = input.width;
   if (desc.height == 0) desc.height = input.height;
-  if (desc.fps_num == 0) desc.fps_num = input.fps_num;
-  if (desc.fps_den == 0) desc.fps_den = input.fps_den;
+  if (desc.fps.num == 0 || desc.fps.den == 0) desc.fps = input.fps;
   if (desc.pixfmt.s[0] == '\0') desc.pixfmt = input.pixfmt;
 
   writer->input = desc;

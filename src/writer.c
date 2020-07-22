@@ -4,21 +4,24 @@
 #include "constants.h"
 #include "cmd.h"
 #include "formatter.h"
-#include "ffmpeg-io/reader.h"
+#include "ffmpeg-io/writer.h"
 
 
 int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_options* opts) {
   static const ffmpeg_options no_opts;
   if (opts == NULL) opts = &no_opts;
-  int iwidth  = h->input.width;
-  int iheight = h->input.height;
+  unsigned iwidth  = h->input.width;
+  unsigned iheight = h->input.height;
+  ffmpeg_ratio ifps = h->input.fps;
   ffmpeg_pixfmt ipixfmt = h->input.pixfmt;
-  int owidth  = h->output.width;
-  int oheight = h->output.height;
+  unsigned owidth  = h->output.width;
+  unsigned oheight = h->output.height;
+  ffmpeg_ratio ofps = h->output.fps;
   ffmpeg_pixfmt opixfmt = h->output.pixfmt;
 
   if (owidth  == 0) owidth  = iwidth;
   if (oheight == 0) oheight = iheight;
+  if (ofps.num == 0 || ofps.den == 0) ofps = ifps;
   if (opixfmt.s[0] == '\0') opixfmt = ipixfmt;
 
   if (iwidth == 0 || owidth == 0) {
@@ -33,26 +36,49 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   h->output.pixfmt = opixfmt;
   h->output.width  = owidth;
   h->output.height = oheight;
+  h->output.fps = ofps;
 
   const char* ifmt = ffmpeg_pixfmt2str(&ipixfmt);
   const char* ofmt = ffmpeg_pixfmt2str(&opixfmt);
-
-  ffmpeg_formatter cmd;
-  ffmpeg_formatter_init(&cmd);
 
   char const* dot = filename;
   for (char const* c = filename; *c != '\0'; ++c) {
     if (*c == '.') dot = c;
   }
+  const char* codec = NULL;
+  if (opts->codec.s[0] != '\0') {
+    codec = ffmpeg_codec2str(&opts->codec);
+  } else if (opts->lossless) {
+    if (strcmp(dot, ".mkv") == 0 || strcmp(dot, ".avi") == 0 || strcmp(dot, ".mov") == 0) {
+      codec = "ffv1";
+    }
+  }
 
-  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d -r 25 -i - -an", get_ffmpeg(), ifmt, iwidth, iheight);
+  ffmpeg_formatter cmd;
+  ffmpeg_formatter_init(&cmd);
 
+  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d", get_ffmpeg(), ifmt, iwidth, iheight);
+  if (ifps.num > 0 && ifps.den > 0) {
+    ffmpeg_formatter_append(&cmd, " -r %d/%d", ifps.num, ifps.den);
+  }
+  ffmpeg_formatter_append(&cmd, " -i - -an");
 
-  if (strcmp(dot, ".mkv") == 0) {
-    ffmpeg_formatter_append(&cmd, " -c:v ffv1");
+  if (codec != NULL) {
+    ffmpeg_formatter_append(&cmd, " -c:v %s", codec);
+  }
+
+  const char* filter_prefix = " -filter:v ";
+  if ((ifps.num != ofps.num || ifps.den != ofps.den) && ofps.num > 0 && ofps.den > 0) {
+    ffmpeg_formatter_append(&cmd, "%sfps=fps=%d/%d", filter_prefix, ofps.num, ofps.den);
+    filter_prefix = ",";
   }
   if (iwidth != owidth || iheight != oheight) {
-    ffmpeg_formatter_append(&cmd, " -vf scale=%d:%d", owidth, oheight);
+    if (opts->keep_aspect) {
+      ffmpeg_formatter_append(&cmd, "%sscale=%d:%d,force_original_aspect_ratio=increase,crop=%d:%d", filter_prefix, owidth, oheight, owidth, oheight);
+    } else {
+      ffmpeg_formatter_append(&cmd, "%sscale=%d:%d", filter_prefix, owidth, oheight);
+    }
+    filter_prefix = ",";
   }
   if (opixfmt.s[0] != '\0') {
     ffmpeg_formatter_append(&cmd, " -pix_fmt %s", ofmt);

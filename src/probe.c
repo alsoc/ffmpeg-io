@@ -10,15 +10,19 @@
 #define END_SECTION "[/STREAM]"
 #define KEY_WIDTH "width"
 #define KEY_HEIGHT "height"
-#define KEY_CODEC "codec_type"
+#define KEY_TYPE "codec_type"
 #define KEY_PIXFMT "pix_fmt"
-#define CODEC_VIDEO "video"
+#define KEY_CODEC "codec_name"
+#define KEY_FPS "avg_frame_rate"
+#define TYPE_VIDEO "video"
 
 typedef struct stream_section {
-  const char* codec;
+  const char* type;
   const char* pixfmt;
+  const char* codec;
   int width;
   int height;
+  ffmpeg_ratio fps;
   ffmpeg_error error;
 } stream_section;
 
@@ -79,13 +83,13 @@ static const char* read_section(stream_section* sec, const char* str) {
 
 
   while (strncmp(str, END_SECTION, sizeof(END_SECTION)-1) != 0) {
-    if (strncmp(str, KEY_CODEC, sizeof(KEY_CODEC)-1) == 0) {
-      str = eat_equals(str + sizeof(KEY_CODEC)-1);
+    if (strncmp(str, KEY_TYPE, sizeof(KEY_TYPE)-1) == 0) {
+      str = eat_equals(str + sizeof(KEY_TYPE)-1);
       if (str == NULL) {
         sec->error = ffmpeg_ffprobe_invalid_statement;
         return NULL;
       }
-      if (sec->codec != NULL) {
+      if (sec->type != NULL) {
         sec->error = ffmpeg_ffprobe_multiple_codec;
         return NULL;
       }
@@ -93,7 +97,7 @@ static const char* read_section(stream_section* sec, const char* str) {
         sec->error = ffmpeg_ffprobe_invalid_statement;
         return NULL;
       }
-      sec->codec = str;
+      sec->type = str;
       str = end_of_line(str);
     } else if (strncmp(str, KEY_PIXFMT, sizeof(KEY_PIXFMT)-1) == 0) {
       str = eat_equals(str + sizeof(KEY_PIXFMT)-1);
@@ -110,6 +114,22 @@ static const char* read_section(stream_section* sec, const char* str) {
         return NULL;
       }
       sec->pixfmt = str;
+      str = end_of_line(str);
+    } else if (strncmp(str, KEY_CODEC, sizeof(KEY_CODEC)-1) == 0) {
+      str = eat_equals(str + sizeof(KEY_CODEC)-1);
+      if (str == NULL) {
+        sec->error = ffmpeg_ffprobe_invalid_statement;
+        return NULL;
+      }
+      if (sec->codec != NULL) {
+        sec->error = ffmpeg_ffprobe_invalid_statement;
+        return NULL;
+      }
+      if (ffmpeg_iseol(*str)) {
+        sec->error = ffmpeg_ffprobe_invalid_statement;
+        return NULL;
+      }
+      sec->codec = str;
       str = end_of_line(str);
     } else if (strncmp(str, KEY_WIDTH, sizeof(KEY_WIDTH)-1) == 0) {
       str = eat_equals(str + sizeof(KEY_WIDTH)-1);
@@ -142,6 +162,28 @@ static const char* read_section(stream_section* sec, const char* str) {
         sec->error = ffmpeg_ffprobe_invalid_statement;
         return NULL;
       }
+    } else if (strncmp(str, KEY_FPS, sizeof(KEY_FPS)-1) == 0) {
+      str = eat_equals(str + sizeof(KEY_FPS)-1);
+      if (str == NULL) {
+        sec->error = ffmpeg_ffprobe_invalid_statement;
+        return NULL;
+      }
+      if (sec->fps.num != 0 || sec->fps.den != 0) {
+        sec->error = ffmpeg_ffprobe_invalid_statement;
+      }
+      sec->fps.num = strtol(str, (char**)&str, 10);
+      str = eat_spaces(str);
+      if (*str == '/') {
+        ++str;
+        sec->fps.den = strtol(str, (char**)&str, 10);
+        str = eat_spaces(str);
+      } else {
+        sec->fps.den = 1;
+      }
+      if (sec->fps.num == 0 || sec->fps.den == 0 || !ffmpeg_iseol(*str)) {
+        sec->error = ffmpeg_ffprobe_invalid_statement;
+        return NULL;
+      }
     } else {
       str = end_of_line(str);
     }
@@ -162,7 +204,7 @@ static const char* read_section(stream_section* sec, const char* str) {
     return NULL;
   }
 
-  if (sec->codec == NULL) {
+  if (sec->type == NULL) {
     sec->error = ffmpeg_ffprobe_no_codec;
     return NULL;
   }
@@ -192,7 +234,7 @@ int ffmpeg_probe(ffmpeg_handle* h, const char* filename) {
   const char* str = eat_spaces(filecontent);
   do {
     str = read_section(&sec, str);
-  } while (str != NULL && strncmp(sec.codec, CODEC_VIDEO, sizeof(CODEC_VIDEO)-1) != 0);
+  } while (str != NULL && strncmp(sec.type, TYPE_VIDEO, sizeof(TYPE_VIDEO)-1) != 0);
 
   if (sec.error != ffmpeg_noerror) {
     h->error = sec.error;
@@ -211,6 +253,9 @@ int ffmpeg_probe(ffmpeg_handle* h, const char* filename) {
     h->error = ffmpeg_ffprobe_no_height;
     goto cleanup;
   }
+  if (sec.fps.num != 0 && sec.fps.den != 0) {
+    h->input.fps = sec.fps;
+  }
 
   h->input.width = sec.width;
   h->input.height = sec.height;
@@ -224,6 +269,16 @@ int ffmpeg_probe(ffmpeg_handle* h, const char* filename) {
       break;
     }
   }
+
+  //memset(&h->codec, 0, sizeof(h->codec));
+  //for (size_t i = 0; i < sizeof(h->codec.s)-1; i++) {
+  //  char c = sec.pixfmt[i];
+  //  if (ffmpeg_isword(c)) {
+  //    h->codec.s[i] = c;
+  //  } else {
+  //    break;
+  //  }
+  //}
 
   result = 1;
 cleanup:

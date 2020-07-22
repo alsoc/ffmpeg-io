@@ -5,3 +5,4 @@
 
 const char* get_ffmpeg();
 const char* get_ffprobe();
+const char* get_ffplay();
