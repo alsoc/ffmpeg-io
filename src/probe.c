@@ -212,14 +212,14 @@ int ffmpeg_probe(ffmpeg_handle* h, const char* filename) {
     goto cleanup;
   }
 
-  h->input_width = sec.width;
-  h->input_height = sec.height;
+  h->input.width = sec.width;
+  h->input.height = sec.height;
 
-  memset(&h->input_pixfmt, 0, sizeof(h->input_pixfmt));
-  for (size_t i = 0; i < sizeof(h->input_pixfmt.s)-1; i++) {
+  memset(&h->input.pixfmt, 0, sizeof(h->input.pixfmt));
+  for (size_t i = 0; i < sizeof(h->input.pixfmt.s)-1; i++) {
     char c = sec.pixfmt[i];
     if (ffmpeg_isword(c)) {
-      h->input_pixfmt.s[i] = c;
+      h->input.pixfmt.s[i] = c;
     } else {
       break;
     }

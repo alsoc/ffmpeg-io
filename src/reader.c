@@ -3,18 +3,20 @@
 #include <stdio.h>
 #include "constants.h"
 #include "cmd.h"
+#include "formatter.h"
 #include "ffmpeg-io/reader.h"
 
 
-int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename) {
-  char buffer[2*BUFFER_SIZE];
-  int width = h->output_width;
-  int height = h->output_height;
-  ffmpeg_pixfmt pixfmt = h->output_pixfmt;
+int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_options* opts) {
+  static const ffmpeg_options no_opts;
+  if (opts == NULL) opts = &no_opts;
+  int width = h->output.width;
+  int height = h->output.height;
+  ffmpeg_pixfmt pixfmt = h->output.pixfmt;
 
-  if (width  == 0) width  = h->input_width;
-  if (height == 0) height = h->input_height;
-  if (pixfmt.s[0] == '\0') h->output_pixfmt = h->input_pixfmt;
+  if (width  == 0) width  = h->input.width;
+  if (height == 0) height = h->input.height;
+  if (pixfmt.s[0] == '\0') h->output.pixfmt = h->input.pixfmt;
 
   if (width == 0) {
     h->error = ffmpeg_invalid_width;
@@ -29,29 +31,36 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename) {
     return 0;
   }
 
-  h->output_pixfmt = pixfmt;
-  h->output_width = width;
-  h->output_height = height;
+  h->output.pixfmt = pixfmt;
+  h->output.width = width;
+  h->output.height = height;
 
-  if (h->input_width == h->output_width && h->input_height == h->output_height) {
-    snprintf(buffer, sizeof(buffer), "exec %s -loglevel error -i '%s' -f image2pipe -vcodec rawvideo -pix_fmt %s - </dev/null", get_ffmpeg(), filename, ffmpeg_pixfmt2str(&pixfmt));
-  } else {
-    snprintf(buffer, sizeof(buffer), "exec %s -loglevel error -i '%s' -vf scale=%d:%d -f image2pipe -vcodec rawvideo -pix_fmt %s - </dev/null", get_ffmpeg(), filename, width, height, ffmpeg_pixfmt2str(&pixfmt));
+  ffmpeg_formatter cmd;
+  ffmpeg_formatter_init(&cmd);
+
+  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -i '%s'", get_ffmpeg(), filename);
+
+  if (h->input.width != h->output.width || h->input.height != h->output.height) {
+    ffmpeg_formatter_append(&cmd, " -vf scale=%d:%d", width, height);
   }
-  printf("cmd: %s\n", buffer);
+  ffmpeg_formatter_append(&cmd, " -f image2pipe -vcodec rawvideo -pix_fmt %s - </dev/null", ffmpeg_pixfmt2str(&pixfmt));
 
-  h->pipe = popen(buffer, "r");
+  if (opts->debug) printf("cmd: %s\n", cmd.str);
+
+  h->pipe = popen(cmd.str, "r");
+  int success = 1;
   if (!h->pipe) {
     h->error = ffmpeg_pipe_error;
-    return 0;
+    success = 0;
   }
-  return 1;
+  ffmpeg_formatter_fini(&cmd);
+  return success;
 }
 
 int ffmpeg_read1d(ffmpeg_handle* h, uint8_t* data, size_t pitch) {
-  size_t width = h->output_width;
-  size_t height = h->output_height;
-  ffmpeg_pixfmt pixfmt = h->output_pixfmt;
+  size_t width = h->output.width;
+  size_t height = h->output.height;
+  ffmpeg_pixfmt pixfmt = h->output.pixfmt;
   size_t elsize = ffmpeg_pixel_size(pixfmt);
   FILE* pipe = h->pipe;
 
@@ -88,9 +97,9 @@ int ffmpeg_read1d(ffmpeg_handle* h, uint8_t* data, size_t pitch) {
 }
 
 int ffmpeg_read2d(ffmpeg_handle* h, uint8_t** data) {
-  size_t width = h->output_width;
-  size_t height = h->output_height;
-  ffmpeg_pixfmt pixfmt = h->output_pixfmt;
+  size_t width = h->output.width;
+  size_t height = h->output.height;
+  ffmpeg_pixfmt pixfmt = h->output.pixfmt;
   size_t elsize = ffmpeg_pixel_size(pixfmt);
   FILE* pipe = h->pipe;
 

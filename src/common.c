@@ -38,6 +38,25 @@ ffmpeg_pixfmt ffmpeg_str2pixfmt(const char* str) {
   }
   return fmt;
 }
+const char* ffmpeg_codec2str(const ffmpeg_codec* fmt) {
+  if (fmt->s[0] == '\0') return "raw";
+  return fmt->s;
+}
+ffmpeg_codec ffmpeg_str2codec(const char* str) {
+  ffmpeg_codec codec;
+  memset(&codec, 0, sizeof(codec));
+  if (str != NULL) {
+    if (strcmp(str, "raw") == 0 || strcmp(str, "rawvideo") == 0) {
+      str = NULL;
+    } else if (strcmp(str, "lossless") == 0) {
+      str = "ffv1";
+    }
+  }
+  if (str != NULL ) {
+    strncpy(codec.s, str, sizeof(codec.s)-1);
+  }
+  return codec;
+}
 
 const char* ffmpeg_error2str(ffmpeg_error err) {
   switch (err) {
@@ -93,15 +112,19 @@ void ffmpeg_init(ffmpeg_handle* h) {
   memset(h, 0, sizeof(ffmpeg_handle));
 }
 
-void ffmpeg_compatible_writer(ffmpeg_handle* writer, const ffmpeg_handle* reader) {
-  size_t width  = reader->output_width;
-  size_t height = reader->output_height;
-  ffmpeg_pixfmt pixfmt = reader->output_pixfmt;
-  if (width == 0) width = reader->input_width;
-  if (height == 0) height = reader->input_height;
-  if (pixfmt.s[0] == '\0') pixfmt = reader->input_pixfmt;
+void ffmpeg_options_init(ffmpeg_options* o) {
+  memset(o, 0, sizeof(ffmpeg_options));
+}
 
-  writer->input_width  = width;
-  writer->input_height = height;
-  writer->input_pixfmt = pixfmt;
+void ffmpeg_compatible_writer(ffmpeg_handle* writer, const ffmpeg_handle* reader) {
+  ffmpeg_descriptor desc = reader->output;
+  ffmpeg_descriptor input = reader->input;
+
+  if (desc.width == 0) desc.width = input.width;
+  if (desc.height == 0) desc.height = input.height;
+  if (desc.fps_num == 0) desc.fps_num = input.fps_num;
+  if (desc.fps_den == 0) desc.fps_den = input.fps_den;
+  if (desc.pixfmt.s[0] == '\0') desc.pixfmt = input.pixfmt;
+
+  writer->input = desc;
 }

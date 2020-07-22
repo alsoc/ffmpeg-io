@@ -10,6 +10,9 @@ extern "C" {
 typedef struct ffmpeg_pixfmt {
   char s[16];
 } ffmpeg_pixfmt;
+typedef struct ffmpeg_codec {
+  char s[8];
+} ffmpeg_codec;
 
 typedef enum ffmpeg_error {
   ffmpeg_noerror = 0,
@@ -36,26 +39,35 @@ typedef enum ffmpeg_error {
   ffmpeg_unknown_error,
 } ffmpeg_error;
 
+typedef struct ffmpeg_descriptor {
+  unsigned width, height;
+  unsigned fps_num, fps_den;
+  ffmpeg_pixfmt pixfmt;
+} ffmpeg_descriptor;
 typedef struct ffmpeg_handle {
   FILE* pipe;
-  size_t input_width;
-  size_t input_height;
-  size_t output_width;
-  size_t output_height;
-  ffmpeg_pixfmt input_pixfmt;
-  ffmpeg_pixfmt output_pixfmt;
+  ffmpeg_descriptor input, output;
   int error;
 } ffmpeg_handle;
+typedef struct ffmpeg_options {
+  int debug;
+  int keep_ratio;
+  ffmpeg_codec codec;
+} ffmpeg_options;
 
 size_t ffmpeg_pixel_size(ffmpeg_pixfmt);
 size_t ffmpeg_pixel_nchannel(ffmpeg_pixfmt);
 
 const char* ffmpeg_pixfmt2str(const ffmpeg_pixfmt*);
 ffmpeg_pixfmt ffmpeg_str2pixfmt(const char*);
+const char* ffmpeg_codec2str(const ffmpeg_codec*);
+ffmpeg_codec ffmpeg_str2codec(const char*);
 const char* ffmpeg_error2str(ffmpeg_error);
 
 void ffmpeg_init(ffmpeg_handle*);
 void ffmpeg_compatible_writer(ffmpeg_handle* writer, const ffmpeg_handle* reader);
+
+void ffmpeg_options_init(ffmpeg_options*);
 
 #ifdef __cplusplus
 }

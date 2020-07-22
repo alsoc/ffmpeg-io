@@ -3,17 +3,19 @@
 #include <stdio.h>
 #include "constants.h"
 #include "cmd.h"
+#include "formatter.h"
 #include "ffmpeg-io/reader.h"
 
 
-int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename) {
-  char buffer[2*BUFFER_SIZE];
-  int iwidth  = h->input_width;
-  int iheight = h->input_height;
-  ffmpeg_pixfmt ipixfmt = h->input_pixfmt;
-  int owidth  = h->output_width;
-  int oheight = h->output_height;
-  ffmpeg_pixfmt opixfmt = h->output_pixfmt;
+int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_options* opts) {
+  static const ffmpeg_options no_opts;
+  if (opts == NULL) opts = &no_opts;
+  int iwidth  = h->input.width;
+  int iheight = h->input.height;
+  ffmpeg_pixfmt ipixfmt = h->input.pixfmt;
+  int owidth  = h->output.width;
+  int oheight = h->output.height;
+  ffmpeg_pixfmt opixfmt = h->output.pixfmt;
 
   if (owidth  == 0) owidth  = iwidth;
   if (oheight == 0) oheight = iheight;
@@ -28,48 +30,50 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename) {
     return 0;
   }
 
-  h->output_pixfmt = opixfmt;
-  h->output_width  = owidth;
-  h->output_height = oheight;
+  h->output.pixfmt = opixfmt;
+  h->output.width  = owidth;
+  h->output.height = oheight;
 
   const char* ifmt = ffmpeg_pixfmt2str(&ipixfmt);
   const char* ofmt = ffmpeg_pixfmt2str(&opixfmt);
 
+  ffmpeg_formatter cmd;
+  ffmpeg_formatter_init(&cmd);
+
   char const* dot = filename;
-  char const* codec = "";
   for (char const* c = filename; *c != '\0'; ++c) {
     if (*c == '.') dot = c;
   }
-  if (strcmp(dot, ".mkv") == 0) codec = "-c:v ffv1";
 
-  char rescale[64];
-  memset(rescale, 0, sizeof(rescale));
+  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d -r 25 -i - -an", get_ffmpeg(), ifmt, iwidth, iheight);
+
+
+  if (strcmp(dot, ".mkv") == 0) {
+    ffmpeg_formatter_append(&cmd, " -c:v ffv1");
+  }
   if (iwidth != owidth || iheight != oheight) {
-    snprintf(rescale, sizeof(rescale), "-vf scale=%d:%d", owidth, oheight);
+    ffmpeg_formatter_append(&cmd, " -vf scale=%d:%d", owidth, oheight);
   }
-
-  char out_fmt[64];
-  memset(out_fmt, 0, sizeof(out_fmt));
   if (opixfmt.s[0] != '\0') {
-    snprintf(out_fmt, sizeof(out_fmt), "-pix_fmt %s", ofmt);
+    ffmpeg_formatter_append(&cmd, " -pix_fmt %s", ofmt);
   }
+  ffmpeg_formatter_append(&cmd, " -start_number 0 '%s'", filename);
+  if (opts->debug) printf("cmd: %s\n", cmd.str);
 
-
-  snprintf(buffer, sizeof(buffer), "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d -r 25 -i - -an %s %s %s -start_number 0 '%s'", get_ffmpeg(), ifmt, iwidth, iheight, codec, rescale, out_fmt, filename);
-  printf("cmd: %s\n", buffer);
-
-  h->pipe = popen(buffer, "w");
+  h->pipe = popen(cmd.str, "w");
+  int success = 1;
   if (!h->pipe) {
     h->error = ffmpeg_pipe_error;
-    return 0;
+    success = 0;
   }
-  return 1;
+  ffmpeg_formatter_fini(&cmd);
+  return success;
 }
 
 int ffmpeg_write1d(ffmpeg_handle* h, const uint8_t* data, size_t pitch) {
-  size_t width = h->input_width;
-  size_t height = h->input_height;
-  ffmpeg_pixfmt pixfmt = h->input_pixfmt;
+  size_t width = h->input.width;
+  size_t height = h->input.height;
+  ffmpeg_pixfmt pixfmt = h->input.pixfmt;
   size_t elsize = ffmpeg_pixel_size(pixfmt);
   FILE* pipe = h->pipe;
 
@@ -98,9 +102,9 @@ int ffmpeg_write1d(ffmpeg_handle* h, const uint8_t* data, size_t pitch) {
 }
 
 int ffmpeg_write2d(ffmpeg_handle* h, uint8_t** data) {
-  size_t width = h->input_width;
-  size_t height = h->input_height;
-  ffmpeg_pixfmt pixfmt = h->input_pixfmt;
+  size_t width = h->input.width;
+  size_t height = h->input.height;
+  ffmpeg_pixfmt pixfmt = h->input.pixfmt;
   size_t elsize = ffmpeg_pixel_size(pixfmt);
   FILE* pipe = h->pipe;
 
