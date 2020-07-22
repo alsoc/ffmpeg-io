@@ -116,7 +116,7 @@ int ffmpeg_read2d(ffmpeg_handle* h, uint8_t** data) {
   }
 
   for (size_t i = 0; i < height; i++) {
-    size_t read = fread(data[i], 1, width, pipe);
+    size_t read = fread(data[i], elsize, width, pipe);
     if (read < width) {
       h->error = ffmpeg_partial_read;
       return 0;
