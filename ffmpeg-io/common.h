@@ -23,6 +23,7 @@ typedef enum ffmpeg_error {
   ffmpeg_ffprobe_multiple_codec,
   ffmpeg_ffprobe_multiple_width,
   ffmpeg_ffprobe_multiple_height,
+  ffmpeg_ffprobe_multiple_framerate,
   ffmpeg_ffprobe_multiple_pixfmt,
   ffmpeg_ffprobe_no_codec,
   ffmpeg_ffprobe_no_width,
@@ -32,6 +33,8 @@ typedef enum ffmpeg_error {
   ffmpeg_pipe_error,
   ffmpeg_invalid_width,
   ffmpeg_invalid_height,
+  ffmpeg_invalid_framerate,
+  ffmpeg_invalid_codec,
   ffmpeg_invalid_pixfmt,
   ffmpeg_closed_pipe,
   ffmpeg_eof_error,
@@ -44,20 +47,20 @@ typedef struct ffmpeg_ratio {
 } ffmpeg_ratio;
 typedef struct ffmpeg_descriptor {
   unsigned width, height;
-  ffmpeg_ratio fps;
+  ffmpeg_ratio framerate;
   ffmpeg_pixfmt pixfmt;
 } ffmpeg_descriptor;
 typedef struct ffmpeg_handle {
   FILE* pipe;
   ffmpeg_descriptor input, output;
-  int error;
+  ffmpeg_error error;
 } ffmpeg_handle;
 typedef struct ffmpeg_options {
   const char* window_title;
   ffmpeg_codec codec;
   unsigned buffer;
   unsigned debug:1;
-  unsigned force_input_fps:1;
+  unsigned force_input_framerate:1;
   unsigned lossless:1;
   unsigned keep_aspect:1;
 } ffmpeg_options;
@@ -72,6 +75,8 @@ ffmpeg_codec ffmpeg_str2codec(const char*);
 const char* ffmpeg_error2str(ffmpeg_error);
 
 void ffmpeg_init(ffmpeg_handle*);
+int ffmpeg_valid_descriptor(const ffmpeg_descriptor*, ffmpeg_error*);
+void ffmpeg_merge_descriptor(ffmpeg_descriptor*, const ffmpeg_descriptor*);
 void ffmpeg_compatible_writer(ffmpeg_handle* writer, const ffmpeg_handle* reader);
 
 void ffmpeg_options_init(ffmpeg_options*);

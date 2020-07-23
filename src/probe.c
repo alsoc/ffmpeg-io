@@ -13,7 +13,7 @@
 #define KEY_TYPE "codec_type"
 #define KEY_PIXFMT "pix_fmt"
 #define KEY_CODEC "codec_name"
-#define KEY_FPS "avg_frame_rate"
+#define KEY_FRAMERATE "avg_frame_rate"
 #define TYPE_VIDEO "video"
 
 typedef struct stream_section {
@@ -22,7 +22,7 @@ typedef struct stream_section {
   const char* codec;
   int width;
   int height;
-  ffmpeg_ratio fps;
+  ffmpeg_ratio framerate;
   ffmpeg_error error;
 } stream_section;
 
@@ -122,7 +122,7 @@ static const char* read_section(stream_section* sec, const char* str) {
         return NULL;
       }
       if (sec->codec != NULL) {
-        sec->error = ffmpeg_ffprobe_invalid_statement;
+        sec->error = ffmpeg_ffprobe_multiple_codec;
         return NULL;
       }
       if (ffmpeg_iseol(*str)) {
@@ -162,25 +162,25 @@ static const char* read_section(stream_section* sec, const char* str) {
         sec->error = ffmpeg_ffprobe_invalid_statement;
         return NULL;
       }
-    } else if (strncmp(str, KEY_FPS, sizeof(KEY_FPS)-1) == 0) {
-      str = eat_equals(str + sizeof(KEY_FPS)-1);
+    } else if (strncmp(str, KEY_FRAMERATE, sizeof(KEY_FRAMERATE)-1) == 0) {
+      str = eat_equals(str + sizeof(KEY_FRAMERATE)-1);
       if (str == NULL) {
         sec->error = ffmpeg_ffprobe_invalid_statement;
         return NULL;
       }
-      if (sec->fps.num != 0 || sec->fps.den != 0) {
-        sec->error = ffmpeg_ffprobe_invalid_statement;
+      if (sec->framerate.num != 0 || sec->framerate.den != 0) {
+        sec->error = ffmpeg_ffprobe_multiple_framerate;
       }
-      sec->fps.num = strtol(str, (char**)&str, 10);
+      sec->framerate.num = strtol(str, (char**)&str, 10);
       str = eat_spaces(str);
       if (*str == '/') {
         ++str;
-        sec->fps.den = strtol(str, (char**)&str, 10);
+        sec->framerate.den = strtol(str, (char**)&str, 10);
         str = eat_spaces(str);
       } else {
-        sec->fps.den = 1;
+        sec->framerate.den = 1;
       }
-      if (sec->fps.num == 0 || sec->fps.den == 0 || !ffmpeg_iseol(*str)) {
+      if (sec->framerate.num == 0 || sec->framerate.den == 0 || !ffmpeg_iseol(*str)) {
         sec->error = ffmpeg_ffprobe_invalid_statement;
         return NULL;
       }
@@ -253,8 +253,11 @@ int ffmpeg_probe(ffmpeg_handle* h, const char* filename) {
     h->error = ffmpeg_ffprobe_no_height;
     goto cleanup;
   }
-  if (sec.fps.num != 0 && sec.fps.den != 0) {
-    h->input.fps = sec.fps;
+  if (sec.framerate.num != 0 && sec.framerate.den != 0) {
+    h->input.framerate = sec.framerate;
+  } else {
+    h->input.framerate.num = 25;
+    h->input.framerate.den = 1;
   }
 
   h->input.width = sec.width;

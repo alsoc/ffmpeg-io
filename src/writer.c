@@ -7,39 +7,63 @@
 #include "ffmpeg-io/writer.h"
 
 
+int ffmpeg_start_writer_cmd_raw(ffmpeg_handle* h, const char* command) {
+  ffmpeg_formatter cmd;
+  ffmpeg_formatter_init(&cmd);
+  ffmpeg_formatter_append(&cmd, "exec %s", command);
+
+  h->pipe = popen(cmd.str, "w");
+  int success = 1;
+  if (!h->pipe) {
+    h->error = ffmpeg_pipe_error;
+    success = 0;
+  }
+  ffmpeg_formatter_fini(&cmd);
+  return success;
+}
+int ffmpeg_start_writer_cmd(ffmpeg_handle* h, const char* filename, const char* left, const char* middle, const char* right) {
+  ffmpeg_merge_descriptor(&h->output, &h->input);
+  if (!ffmpeg_valid_descriptor(&h->input,  &h->error)) return 0;
+  const char* pixfmt = ffmpeg_pixfmt2str(&h->input.pixfmt);
+
+  ffmpeg_formatter cmd;
+  ffmpeg_formatter_init(&cmd);
+  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d", get_ffmpeg(), pixfmt, h->input.width, h->input.height);
+  if (left != NULL) {
+    ffmpeg_formatter_append(&cmd, " %s", left);
+  }
+  ffmpeg_formatter_append(&cmd, " -i - -an");
+  if (middle != NULL) {
+    ffmpeg_formatter_append(&cmd, " %s", middle);
+  }
+  ffmpeg_formatter_append(&cmd, " '%s'", filename);
+  if (right != NULL) {
+    ffmpeg_formatter_append(&cmd, " %s", right);
+  }
+
+  h->pipe = popen(cmd.str, "w");
+  int success = 1;
+  if (!h->pipe) {
+    h->error = ffmpeg_pipe_error;
+    success = 0;
+  }
+  ffmpeg_formatter_fini(&cmd);
+  return success;
+}
 int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_options* opts) {
   static const ffmpeg_options no_opts;
   if (opts == NULL) opts = &no_opts;
+  ffmpeg_merge_descriptor(&h->output, &h->input);
+  if (!ffmpeg_valid_descriptor(&h->input,  &h->error)) return 0;
+  if (!ffmpeg_valid_descriptor(&h->output, &h->error)) return 0;
   unsigned iwidth  = h->input.width;
   unsigned iheight = h->input.height;
-  ffmpeg_ratio ifps = h->input.fps;
-  ffmpeg_pixfmt ipixfmt = h->input.pixfmt;
+  ffmpeg_ratio iframerate = h->input.framerate;
+  const char* ifmt = ffmpeg_pixfmt2str(&h->input.pixfmt);
   unsigned owidth  = h->output.width;
   unsigned oheight = h->output.height;
-  ffmpeg_ratio ofps = h->output.fps;
-  ffmpeg_pixfmt opixfmt = h->output.pixfmt;
-
-  if (owidth  == 0) owidth  = iwidth;
-  if (oheight == 0) oheight = iheight;
-  if (ofps.num == 0 || ofps.den == 0) ofps = ifps;
-  if (opixfmt.s[0] == '\0') opixfmt = ipixfmt;
-
-  if (iwidth == 0 || owidth == 0) {
-    h->error = ffmpeg_invalid_width;
-    return 0;
-  }
-  if (iheight == 0 || oheight == 0) {
-    h->error = ffmpeg_invalid_height;
-    return 0;
-  }
-
-  h->output.pixfmt = opixfmt;
-  h->output.width  = owidth;
-  h->output.height = oheight;
-  h->output.fps = ofps;
-
-  const char* ifmt = ffmpeg_pixfmt2str(&ipixfmt);
-  const char* ofmt = ffmpeg_pixfmt2str(&opixfmt);
+  ffmpeg_ratio oframerate = h->output.framerate;
+  const char* ofmt = ffmpeg_pixfmt2str(&h->output.pixfmt);
 
   char const* dot = filename;
   for (char const* c = filename; *c != '\0'; ++c) {
@@ -58,8 +82,8 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   ffmpeg_formatter_init(&cmd);
 
   ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d", get_ffmpeg(), ifmt, iwidth, iheight);
-  if (ifps.num > 0 && ifps.den > 0) {
-    ffmpeg_formatter_append(&cmd, " -r %d/%d", ifps.num, ifps.den);
+  if (iframerate.num > 0 && iframerate.den > 0) {
+    ffmpeg_formatter_append(&cmd, " -r %d/%d", iframerate.num, iframerate.den);
   }
   ffmpeg_formatter_append(&cmd, " -i - -an");
 
@@ -68,8 +92,8 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   }
 
   const char* filter_prefix = " -filter:v ";
-  if ((ifps.num != ofps.num || ifps.den != ofps.den) && ofps.num > 0 && ofps.den > 0) {
-    ffmpeg_formatter_append(&cmd, "%sfps=fps=%d/%d", filter_prefix, ofps.num, ofps.den);
+  if ((iframerate.num != oframerate.num || iframerate.den != oframerate.den) && oframerate.num > 0 && oframerate.den > 0) {
+    ffmpeg_formatter_append(&cmd, "%sframerate=framerate=%d/%d", filter_prefix, oframerate.num, oframerate.den);
     filter_prefix = ",";
   }
   if (iwidth != owidth || iheight != oheight) {
@@ -80,7 +104,7 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
     }
     filter_prefix = ",";
   }
-  if (opixfmt.s[0] != '\0') {
+  if (strcmp(ifmt, ofmt) != 0) {
     ffmpeg_formatter_append(&cmd, " -pix_fmt %s", ofmt);
   }
   ffmpeg_formatter_append(&cmd, " -start_number 0 '%s'", filename);

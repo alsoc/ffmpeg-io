@@ -76,6 +76,8 @@ const char* ffmpeg_error2str(ffmpeg_error err) {
       return "ffprobe_multiple_width";
     case ffmpeg_ffprobe_multiple_height:
       return "ffprobe_multiple_height";
+    case ffmpeg_ffprobe_multiple_framerate:
+      return "ffprobe_multiple_framerate";
     case ffmpeg_ffprobe_multiple_pixfmt:
       return "ffprobe_multiple_pixfmt";
     case ffmpeg_ffprobe_no_codec:
@@ -94,6 +96,10 @@ const char* ffmpeg_error2str(ffmpeg_error err) {
       return "invalid_width";
     case ffmpeg_invalid_height:
       return "invalid_height";
+    case ffmpeg_invalid_framerate:
+      return "invalid_framerate";
+    case ffmpeg_invalid_codec:
+      return "invalid_codec";
     case ffmpeg_invalid_pixfmt:
       return "invalid_pixfmt";
     case ffmpeg_closed_pipe:
@@ -116,14 +122,34 @@ void ffmpeg_options_init(ffmpeg_options* o) {
   memset(o, 0, sizeof(ffmpeg_options));
 }
 
+int ffmpeg_valid_descriptor(const ffmpeg_descriptor* p, ffmpeg_error* e) {
+  ffmpeg_error error_sink;
+  if (e == NULL) e = &error_sink;
+  if (p->width == 0) {
+    *e = ffmpeg_invalid_width;
+    return 0;
+  }
+  if (p->height == 0) {
+    *e = ffmpeg_invalid_height;
+    return 0;
+  }
+  if (p->framerate.num == 0 || p->framerate.den == 0) {
+    *e = ffmpeg_invalid_framerate;
+    return 0;
+  }
+  if (p->pixfmt.s[0] == '\0') {
+    *e = ffmpeg_invalid_pixfmt;
+    return 0;
+  }
+  return 1;
+}
+void ffmpeg_merge_descriptor(ffmpeg_descriptor* out, const ffmpeg_descriptor* in) {
+  if (out->width == 0) out->width = in->width;
+  if (out->height == 0) out->height = in->height;
+  if (out->framerate.num == 0 || out->framerate.den == 0) out->framerate = in->framerate;
+  if (out->pixfmt.s[0] == '\0') out->pixfmt = in->pixfmt;
+}
 void ffmpeg_compatible_writer(ffmpeg_handle* writer, const ffmpeg_handle* reader) {
-  ffmpeg_descriptor desc = reader->output;
-  ffmpeg_descriptor input = reader->input;
-
-  if (desc.width == 0) desc.width = input.width;
-  if (desc.height == 0) desc.height = input.height;
-  if (desc.fps.num == 0 || desc.fps.den == 0) desc.fps = input.fps;
-  if (desc.pixfmt.s[0] == '\0') desc.pixfmt = input.pixfmt;
-
-  writer->input = desc;
+  writer->input = reader->output;
+  ffmpeg_merge_descriptor(&writer->input, &reader->input);
 }

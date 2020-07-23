@@ -10,6 +10,7 @@
 int ffmpeg_start_player(ffmpeg_handle* h, const ffmpeg_options* opts) {
   static const ffmpeg_options no_opts;
   if (opts == NULL) opts = &no_opts;
+  if (!ffmpeg_valid_descriptor(&h->input, &h->error)) return 0;
   int width  = h->input.width;
   int height = h->input.height;
   ffmpeg_pixfmt pixfmt = h->input.pixfmt;
@@ -36,8 +37,8 @@ int ffmpeg_start_player(ffmpeg_handle* h, const ffmpeg_options* opts) {
     ffmpeg_formatter_append(&cmd, " -window_title '%s'", opts->window_title);
   }
   //ffmpeg_formatter_append(&cmd, " -infbuf");
-  if (h->input.fps.num > 0 && h->input.fps.den > 0) {
-    ffmpeg_formatter_append(&cmd, " -framerate %d/%d", h->input.fps.num, h->input.fps.den);
+  if (h->input.framerate.num > 0 && h->input.framerate.den > 0) {
+    ffmpeg_formatter_append(&cmd, " -framerate %d/%d", h->input.framerate.num, h->input.framerate.den);
   }
   ffmpeg_formatter_append(&cmd, " -");
   if (opts->debug) printf("cmd: %s\n", cmd.str);
