@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
   ffmpeg_options_init(&options);
 
   options.debug = 1;
+  options.keep_aspect = 1;
 
   const char*const* arg = 1+(const char*const*) argv;
   const char* input = NULL;

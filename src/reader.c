@@ -74,12 +74,12 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
 
   const char* filter_prefix = " -filter:v ";
   if ((iframerate.num != oframerate.num || iframerate.den != oframerate.den) && oframerate.num > 0 && oframerate.den > 0) {
-    ffmpeg_formatter_append(&cmd, "%sframerate=framerate=%d/%d", filter_prefix, oframerate.num, oframerate.den);
+    ffmpeg_formatter_append(&cmd, "%sfps=fps=%d/%d", filter_prefix, oframerate.num, oframerate.den);
     filter_prefix = ",";
   }
   if (h->input.width != width || h->input.height != height) {
     if (opts->keep_aspect) {
-      ffmpeg_formatter_append(&cmd, "%sscale=%d:%d,force_original_aspect_ratio=increase,crop=%d:%d", filter_prefix, width, height, width, height);
+      ffmpeg_formatter_append(&cmd, "%sscale=%d:%d:force_original_aspect_ratio=increase,crop=%d:%d", filter_prefix, width, height, width, height);
     } else {
       ffmpeg_formatter_append(&cmd, "%sscale=%d:%d", filter_prefix, width, height);
     }
