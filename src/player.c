@@ -15,19 +15,6 @@ int ffmpeg_start_player(ffmpeg_handle* h, const ffmpeg_options* opts) {
   int height = h->input.height;
   ffmpeg_pixfmt pixfmt = h->input.pixfmt;
 
-  if (width == 0) {
-    h->error = ffmpeg_invalid_width;
-    return 0;
-  }
-  if (height == 0) {
-    h->error = ffmpeg_invalid_height;
-    return 0;
-  }
-  if (pixfmt.s[0] == '\0') {
-    h->error = ffmpeg_invalid_pixfmt;
-    return 0;
-  }
-
   ffmpeg_formatter cmd;
   ffmpeg_formatter_init(&cmd);
 
@@ -36,7 +23,9 @@ int ffmpeg_start_player(ffmpeg_handle* h, const ffmpeg_options* opts) {
   if (opts->window_title != NULL) {
     ffmpeg_formatter_append(&cmd, " -window_title '%s'", opts->window_title);
   }
-  //ffmpeg_formatter_append(&cmd, " -infbuf");
+  if (opts->infinite_buffer) {
+    ffmpeg_formatter_append(&cmd, " -infbuf");
+  }
   if (h->input.framerate.num > 0 && h->input.framerate.den > 0) {
     ffmpeg_formatter_append(&cmd, " -framerate %d/%d", h->input.framerate.num, h->input.framerate.den);
   }

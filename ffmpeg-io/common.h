@@ -58,7 +58,7 @@ typedef struct ffmpeg_handle {
 typedef struct ffmpeg_options {
   const char* window_title;
   ffmpeg_codec codec;
-  unsigned buffer;
+  unsigned infinite_buffer:1;
   unsigned debug:1;
   unsigned force_input_framerate:1;
   unsigned lossless:1;

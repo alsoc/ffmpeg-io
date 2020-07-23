@@ -133,7 +133,7 @@ int ffmpeg_valid_descriptor(const ffmpeg_descriptor* p, ffmpeg_error* e) {
     *e = ffmpeg_invalid_height;
     return 0;
   }
-  if (p->framerate.num == 0 || p->framerate.den == 0) {
+  if ((p->framerate.num == 0 || p->framerate.den == 0) && !(p->framerate.num == 0 && p->framerate.den == 0)) {
     *e = ffmpeg_invalid_framerate;
     return 0;
   }
