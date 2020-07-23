@@ -83,7 +83,7 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
 
   ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d", get_ffmpeg(), ifmt, iwidth, iheight);
   if (iframerate.num > 0 && iframerate.den > 0) {
-    ffmpeg_formatter_append(&cmd, " -r %d/%d", iframerate.num, iframerate.den);
+    ffmpeg_formatter_append(&cmd, " -framerate %d/%d", iframerate.num, iframerate.den);
   }
   ffmpeg_formatter_append(&cmd, " -i - -an");
 
@@ -120,6 +120,22 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   return success;
 }
 
+int ffmpeg_write_raw(ffmpeg_handle* h, size_t size, size_t nmemb, const void* in) {
+  FILE* pipe = h->pipe;
+
+  if (pipe == NULL) {
+    h->error = ffmpeg_closed_pipe;
+    return 0;
+  }
+  if (feof(pipe)) {
+    h->error = ffmpeg_eof_error;
+    return 0;
+  }
+
+  size_t n = fwrite(in, size, nmemb, pipe);
+
+  return n;
+}
 int ffmpeg_write1d(ffmpeg_handle* h, const uint8_t* data, size_t pitch) {
   size_t width = h->input.width;
   size_t height = h->input.height;

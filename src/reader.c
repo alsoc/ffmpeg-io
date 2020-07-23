@@ -63,12 +63,31 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   ffmpeg_ratio oframerate = h->output.framerate;
   const char* pixfmt = ffmpeg_pixfmt2str(&h->output.pixfmt);
 
+  char const* dot = filename;
+  for (char const* c = filename; *c != '\0'; ++c) {
+    if (*c == '.') dot = c;
+  }
+  static const char*const image_exts[] = {".png", ".pgm", ".pbm", ".ppm", ".bmp", ".jpg", ".jpeg", ".tiff", ".webp", NULL};
+  const char*const* image_ext = image_exts;
+  int image_sequence = 0;
+  while (*image_ext != NULL) {
+    if (strcmp(dot, *image_ext) == 0) {
+      image_sequence = 1;
+      break;
+    }
+    ++image_ext;
+  }
+
   ffmpeg_formatter cmd;
   ffmpeg_formatter_init(&cmd);
 
   ffmpeg_formatter_append(&cmd, "exec %s -loglevel error", get_ffmpeg());
-  if (opts->force_input_framerate && iframerate.num > 0 && iframerate.den > 0) {
-    ffmpeg_formatter_append(&cmd, " -r %d/%d", iframerate.num, iframerate.den);
+  if (iframerate.num > 0 && iframerate.den > 0) {
+    if (image_sequence) {
+      ffmpeg_formatter_append(&cmd, " -framerate %d/%d", iframerate.num, iframerate.den);
+    } else if (opts->force_input_framerate) {
+      ffmpeg_formatter_append(&cmd, " -r %d/%d", iframerate.num, iframerate.den);
+    }
   }
   ffmpeg_formatter_append(&cmd, " -i '%s'", filename);
 
@@ -100,6 +119,25 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   return success;
 }
 
+int ffmpeg_read_raw(ffmpeg_handle* h, size_t size, size_t nmemb, void* out) {
+  FILE* pipe = h->pipe;
+
+  if (pipe == NULL) {
+    h->error = ffmpeg_closed_pipe;
+    return 0;
+  }
+  if (feof(pipe)) {
+    h->error = ffmpeg_eof_error;
+    return 0;
+  }
+
+  size_t n = fread(out, size, nmemb, pipe);
+  if (n < nmemb) {
+    h->error = ffmpeg_partial_read;
+  }
+
+  return n;
+}
 int ffmpeg_read1d(ffmpeg_handle* h, uint8_t* data, size_t pitch) {
   size_t width = h->output.width;
   size_t height = h->output.height;
