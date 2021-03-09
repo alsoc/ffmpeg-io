@@ -51,5 +51,5 @@ int ffmpeg_play2d(ffmpeg_handle* h, uint8_t** data) {
 }
 
 int ffmpeg_stop_player(ffmpeg_handle* h) {
-  return ffmpeg_stop_player(h);
+  return ffmpeg_stop_writer(h);
 }
