@@ -18,7 +18,8 @@ int ffmpeg_start_player(ffmpeg_handle* h, const ffmpeg_options* opts) {
   ffmpeg_formatter cmd;
   ffmpeg_formatter_init(&cmd);
 
-  const char* ffplay = get_ffplay();
+  const char* ffplay = opts->ffplay_path;
+  if (ffplay == NULL) ffplay = get_ffplay();
   if (ffplay == NULL) {
     h->error = ffmpeg_missing_ffplay;
     return 0;

@@ -212,12 +212,15 @@ static const char* read_section(stream_section* sec, const char* str) {
   return str;
 }
 
-int ffmpeg_probe(ffmpeg_handle* h, const char* filename) {
+int ffmpeg_probe(ffmpeg_handle* h, const char* filename, const ffmpeg_options* opts) {
+  static const ffmpeg_options no_opts;
+  if (opts == NULL) opts = &no_opts;
   int result = 0;
   char buffer[BUFFER_SIZE];
   char *filecontent = NULL;
 
-  const char* ffprobe = get_ffprobe();
+  const char* ffprobe = opts->ffprobe_path;
+  if (ffprobe == NULL) ffprobe = get_ffprobe();
   if (ffprobe == NULL) {
     h->error = ffmpeg_missing_ffprobe;
     return 0;

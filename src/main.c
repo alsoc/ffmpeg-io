@@ -93,7 +93,11 @@ int main(int argc, char *argv[]) {
     }
     arg++;
   }
-  if (!ffmpeg_probe(&reader, input)) {
+  if (input == NULL || output == NULL) {
+    usage(stderr, argv[0]);
+    goto cleanup;
+  }
+  if (!ffmpeg_probe(&reader, input, NULL)) {
     fprintf(stderr, "error: %s\n", ffmpeg_error2str(reader.error));
     goto cleanup;
   }

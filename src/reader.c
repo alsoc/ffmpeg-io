@@ -21,12 +21,13 @@ int ffmpeg_start_reader_cmd_raw(ffmpeg_handle* h, const char* command) {
   ffmpeg_formatter_fini(&cmd);
   return success;
 }
-int ffmpeg_start_reader_cmd(ffmpeg_handle* h, const char* filename, const char* left, const char* middle, const char* right) {
+int ffmpeg_start_reader_cmd(ffmpeg_handle* h, const char* filename, const char* left, const char* middle, const char* right, const ffmpeg_options* opts) {
   ffmpeg_merge_descriptor(&h->output, &h->input);
   if (!ffmpeg_valid_descriptor(&h->input, &h->error)) return 0;
   const char* pixfmt = ffmpeg_pixfmt2str(&h->output.pixfmt);
 
-  const char* ffmpeg = get_ffmpeg();
+  const char* ffmpeg = opts->ffmpeg_path;
+  if (ffmpeg == NULL) ffmpeg = get_ffmpeg();
   if (ffmpeg == NULL) {
     h->error = ffmpeg_missing_ffmpeg;
     return 0;
@@ -84,7 +85,8 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
     ++image_ext;
   }
 
-  const char* ffmpeg = get_ffmpeg();
+  const char* ffmpeg = opts->ffmpeg_path;
+  if (ffmpeg == NULL) ffmpeg = get_ffmpeg();
   if (ffmpeg == NULL) {
     h->error = ffmpeg_missing_ffmpeg;
     return 0;
