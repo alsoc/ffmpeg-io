@@ -162,7 +162,9 @@ int ffmpeg_read_raw(ffmpeg_handle* h, size_t size, size_t nmemb, void* out) {
   }
 
   size_t n = fread(out, size, nmemb, pipe);
-  if (n < nmemb) {
+  if (n == 0 && feof(pipe)) {
+    h->error = ffmpeg_eof_error;
+  } else if (n < nmemb) {
     h->error = ffmpeg_partial_read;
   }
 
@@ -198,6 +200,10 @@ int ffmpeg_read1d(ffmpeg_handle* h, uint8_t* data, size_t pitch) {
 
   for (size_t i = 0; i < height; i++) {
     size_t read = fread(data, elsize, width, pipe);
+    if (i == 0 && read == 0 && feof(pipe)) {
+      h->error = ffmpeg_eof_error;
+      return 0;
+    }
     if (read < width) {
       h->error = ffmpeg_partial_read;
       return 0;
@@ -237,6 +243,10 @@ int ffmpeg_read2d(ffmpeg_handle* h, uint8_t** data) {
 
   for (size_t i = 0; i < height; i++) {
     size_t read = fread(data[i], elsize, width, pipe);
+    if (i == 0 && read == 0 && feof(pipe)) {
+      h->error = ffmpeg_eof_error;
+      return 0;
+    }
     if (read < width) {
       h->error = ffmpeg_partial_read;
       return 0;

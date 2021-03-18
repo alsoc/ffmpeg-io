@@ -88,7 +88,7 @@ ffmpeg_fileformat ffmpeg_str2fileformat(const char*);
 const char* ffmpeg_error2str(ffmpeg_error);
 
 void ffmpeg_init(ffmpeg_handle*);
-int ffmpeg_valid_descriptor(const ffmpeg_descriptor*, ffmpeg_error*);
+int ffmpeg_valid_descriptor(const ffmpeg_descriptor*, ffmpeg_error* /* = NULL */);
 void ffmpeg_merge_descriptor(ffmpeg_descriptor*, const ffmpeg_descriptor*);
 void ffmpeg_compatible_writer(ffmpeg_handle* writer, const ffmpeg_handle* reader);
 
