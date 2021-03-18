@@ -99,7 +99,6 @@ int main(int argc, char *argv[]) {
   }
 
   ffmpeg_compatible_writer(&writer, &reader);
-  int pixsize = ffmpeg_pixel_size(reader.output.pixfmt);
 
   if (!ffmpeg_start_reader(&reader, input, &options)) {
     fprintf(stderr, "error: %s\n", ffmpeg_error2str(reader.error));
@@ -116,6 +115,7 @@ int main(int argc, char *argv[]) {
       goto cleanup;
     }
   }
+  int pixsize = ffmpeg_pixel_size(reader.output.pixfmt);
   uint8_t *img = malloc(reader.output.width * reader.output.height * ffmpeg_pixel_size(reader.output.pixfmt));
   int i = 0;
   while (ffmpeg_read1d(&reader, img, pixsize*reader.output.width)) {

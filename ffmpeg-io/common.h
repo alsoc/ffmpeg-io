@@ -69,6 +69,7 @@ typedef struct ffmpeg_options {
   unsigned keep_aspect:1;
 } ffmpeg_options;
 
+size_t ffmpeg_pixel_bitsize(ffmpeg_pixfmt);
 size_t ffmpeg_pixel_size(ffmpeg_pixfmt);
 size_t ffmpeg_pixel_nchannel(ffmpeg_pixfmt);
 
