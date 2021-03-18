@@ -120,11 +120,18 @@ int main(int argc, char *argv[]) {
   int i = 0;
   while (ffmpeg_read1d(&reader, img, pixsize*reader.output.width)) {
     ffmpeg_write1d(&writer, img, pixsize*writer.input.width);
+    if (reader.error || writer.error) break;
     printf("\r%d", i);
     fflush(stdout);
     ++i;
   }
   printf("\n");
+  if (reader.error) {
+    fprintf(stderr, "error: reader: %s\n", ffmpeg_error2str(reader.error));
+  }
+  if (writer.error) {
+    fprintf(stderr, "error: writer: %s\n", ffmpeg_error2str(writer.error));
+  }
 
   free(img);
 

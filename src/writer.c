@@ -26,9 +26,15 @@ int ffmpeg_start_writer_cmd(ffmpeg_handle* h, const char* filename, const char* 
   if (!ffmpeg_valid_descriptor(&h->input,  &h->error)) return 0;
   const char* pixfmt = ffmpeg_pixfmt2str(&h->input.pixfmt);
 
+  const char* ffmpeg = get_ffmpeg();
+  if (ffmpeg == NULL) {
+    h->error = ffmpeg_missing_ffmpeg;
+    return 0;
+  }
+
   ffmpeg_formatter cmd;
   ffmpeg_formatter_init(&cmd);
-  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d", get_ffmpeg(), pixfmt, h->input.width, h->input.height);
+  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d", ffmpeg, pixfmt, h->input.width, h->input.height);
   if (left != NULL) {
     ffmpeg_formatter_append(&cmd, " %s", left);
   }
@@ -78,10 +84,16 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
     }
   }
 
+  const char* ffmpeg = get_ffmpeg();
+  if (ffmpeg == NULL) {
+    h->error = ffmpeg_missing_ffmpeg;
+    return 0;
+  }
+
   ffmpeg_formatter cmd;
   ffmpeg_formatter_init(&cmd);
 
-  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d", get_ffmpeg(), ifmt, iwidth, iheight);
+  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d", ffmpeg, ifmt, iwidth, iheight);
   if (iframerate.num > 0 && iframerate.den > 0) {
     ffmpeg_formatter_append(&cmd, " -framerate %d/%d", iframerate.num, iframerate.den);
   }

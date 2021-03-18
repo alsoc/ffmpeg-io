@@ -108,6 +108,12 @@ const char* ffmpeg_error2str(ffmpeg_error err) {
       return "eof";
     case ffmpeg_partial_read:
       return "partial_read";
+    case ffmpeg_missing_ffmpeg:
+      return "missing_ffmpeg";
+    case ffmpeg_missing_ffprobe:
+      return "missing_ffprobe";
+    case ffmpeg_missing_ffplay:
+      return "missing_ffplay";
     case ffmpeg_unknown_error:
       return "[unknown error]";
   }

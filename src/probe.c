@@ -216,7 +216,13 @@ int ffmpeg_probe(ffmpeg_handle* h, const char* filename) {
   int result = 0;
   char buffer[BUFFER_SIZE];
   char *filecontent = NULL;
-  snprintf(buffer, BUFFER_SIZE, "%s -v quiet -show_streams '%s'", get_ffprobe(), filename);
+
+  const char* ffprobe = get_ffprobe();
+  if (ffprobe == NULL) {
+    h->error = ffmpeg_missing_ffprobe;
+    return 0;
+  }
+  snprintf(buffer, BUFFER_SIZE, "%s -v quiet -show_streams '%s'", ffprobe, filename);
 
   FILE* probe = popen(buffer, "r");
   if (!probe) {

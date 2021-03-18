@@ -39,6 +39,9 @@ typedef enum ffmpeg_error {
   ffmpeg_closed_pipe,
   ffmpeg_eof_error,
   ffmpeg_partial_read,
+  ffmpeg_missing_ffmpeg,
+  ffmpeg_missing_ffprobe,
+  ffmpeg_missing_ffplay,
   ffmpeg_unknown_error,
 } ffmpeg_error;
 
@@ -57,6 +60,7 @@ typedef struct ffmpeg_handle {
 } ffmpeg_handle;
 typedef struct ffmpeg_options {
   const char* window_title;
+  const char* file_format;
   ffmpeg_codec codec;
   unsigned infinite_buffer:1;
   unsigned debug:1;

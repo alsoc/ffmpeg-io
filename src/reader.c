@@ -26,9 +26,15 @@ int ffmpeg_start_reader_cmd(ffmpeg_handle* h, const char* filename, const char* 
   if (!ffmpeg_valid_descriptor(&h->input, &h->error)) return 0;
   const char* pixfmt = ffmpeg_pixfmt2str(&h->output.pixfmt);
 
+  const char* ffmpeg = get_ffmpeg();
+  if (ffmpeg == NULL) {
+    h->error = ffmpeg_missing_ffmpeg;
+    return 0;
+  }
+
   ffmpeg_formatter cmd;
   ffmpeg_formatter_init(&cmd);
-  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error", get_ffmpeg());
+  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error", ffmpeg);
   if (left != NULL) {
     ffmpeg_formatter_append(&cmd, " %s", left);
   }
@@ -78,10 +84,16 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
     ++image_ext;
   }
 
+  const char* ffmpeg = get_ffmpeg();
+  if (ffmpeg == NULL) {
+    h->error = ffmpeg_missing_ffmpeg;
+    return 0;
+  }
+
   ffmpeg_formatter cmd;
   ffmpeg_formatter_init(&cmd);
 
-  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error", get_ffmpeg());
+  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error", ffmpeg);
   if (iframerate.num > 0 && iframerate.den > 0) {
     if (image_sequence) {
       ffmpeg_formatter_append(&cmd, " -framerate %d/%d", iframerate.num, iframerate.den);
