@@ -77,8 +77,8 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
     if (*c == '.') dot = c;
   }
   const char* codec = NULL;
-  if (opts->codec.s[0] != '\0') {
-    codec = ffmpeg_codec2str(&opts->codec);
+  if (h->output.codec.s[0] != '\0') {
+    codec = ffmpeg_codec2str(&h->output.codec);
   } else if (opts->lossless) {
     if (strcmp(dot, ".mkv") == 0 || strcmp(dot, ".avi") == 0 || strcmp(dot, ".mov") == 0) {
       codec = "ffv1";
@@ -95,15 +95,22 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   ffmpeg_formatter cmd;
   ffmpeg_formatter_init(&cmd);
 
-  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f rawvideo -vcodec rawvideo -pix_fmt %s -s %dx%d", ffmpeg, ifmt, iwidth, iheight);
-  if (iframerate.num > 0 && iframerate.den > 0) {
-    ffmpeg_formatter_append(&cmd, " -framerate %d/%d", iframerate.num, iframerate.den);
+  {
+    const char* format = "rawvideo";
+    const char* codec = "rawvideo";
+    if (h->input.fileformat.s[0] != '\0') {
+      format = ffmpeg_fileformat2str(&h->input.fileformat);
+    }
+    if (h->input.codec.s[0] != '\0') {
+      codec = ffmpeg_codec2str(&h->input.codec);
+    }
+
+    ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -y -f %s -vcodec %s -pix_fmt %s -s %dx%d", ffmpeg, format, codec, ifmt, iwidth, iheight);
+    if (iframerate.num > 0 && iframerate.den > 0) {
+      ffmpeg_formatter_append(&cmd, " -framerate %d/%d", iframerate.num, iframerate.den);
+    }
   }
   ffmpeg_formatter_append(&cmd, " -i - -an");
-
-  if (codec != NULL) {
-    ffmpeg_formatter_append(&cmd, " -c:v %s", codec);
-  }
 
   const char* filter_prefix = " -filter:v ";
   if ((iframerate.num != oframerate.num || iframerate.den != oframerate.den) && oframerate.num > 0 && oframerate.den > 0) {
@@ -117,6 +124,13 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
       ffmpeg_formatter_append(&cmd, "%sscale=%d:%d", filter_prefix, owidth, oheight);
     }
     filter_prefix = ",";
+  }
+  if (h->output.fileformat.s[0] != '\0') {
+    ffmpeg_formatter_append(&cmd, " -f %s", ffmpeg_fileformat2str(&h->output.fileformat));
+  }
+
+  if (codec != NULL) {
+    ffmpeg_formatter_append(&cmd, " -vcodec %s", codec);
   }
   if (strcmp(ifmt, ofmt) != 0) {
     ffmpeg_formatter_append(&cmd, " -pix_fmt %s", ofmt);

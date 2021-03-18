@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "constants.h"
 #include "cmd.h"
+#include "formatter.h"
 #include "ffmpeg-io/reader.h"
 
 #define BEGIN_SECTION "[STREAM]"
@@ -216,7 +217,6 @@ int ffmpeg_probe(ffmpeg_handle* h, const char* filename, const ffmpeg_options* o
   static const ffmpeg_options no_opts;
   if (opts == NULL) opts = &no_opts;
   int result = 0;
-  char buffer[BUFFER_SIZE];
   char *filecontent = NULL;
 
   const char* ffprobe = opts->ffprobe_path;
@@ -225,13 +225,21 @@ int ffmpeg_probe(ffmpeg_handle* h, const char* filename, const ffmpeg_options* o
     h->error = ffmpeg_missing_ffprobe;
     return 0;
   }
-  snprintf(buffer, BUFFER_SIZE, "%s -v quiet -show_streams '%s'", ffprobe, filename);
 
-  FILE* probe = popen(buffer, "r");
+  ffmpeg_formatter cmd;
+  ffmpeg_formatter_init(&cmd);
+  ffmpeg_formatter_append(&cmd, "%s -v quiet -show_streams", ffprobe);
+  if (h->input.fileformat.s[0] != '\0') {
+    ffmpeg_formatter_append(&cmd, " -f %s", ffmpeg_fileformat2str(&h->input.fileformat));
+  }
+  ffmpeg_formatter_append(&cmd, " '%s'", filename);
+
+  FILE* probe = popen(cmd.str, "r");
   if (!probe) {
     goto cleanup;
   }
   size_t n = 0;
+  // read whole output in one go
   ssize_t read = getdelim(&filecontent, &n, -1, probe);
   pclose(probe);
   if (read == -1) {
@@ -282,18 +290,19 @@ int ffmpeg_probe(ffmpeg_handle* h, const char* filename, const ffmpeg_options* o
     }
   }
 
-  //memset(&h->codec, 0, sizeof(h->codec));
-  //for (size_t i = 0; i < sizeof(h->codec.s)-1; i++) {
-  //  char c = sec.pixfmt[i];
-  //  if (ffmpeg_isword(c)) {
-  //    h->codec.s[i] = c;
-  //  } else {
-  //    break;
-  //  }
-  //}
+  memset(&h->input.codec, 0, sizeof(h->input.codec));
+  for (size_t i = 0; i < sizeof(h->input.codec.s)-1; i++) {
+    char c = sec.codec[i];
+    if (ffmpeg_isword(c)) {
+      h->input.codec.s[i] = c;
+    } else {
+      break;
+    }
+  }
 
   result = 1;
 cleanup:
   free(filecontent);
+  ffmpeg_formatter_fini(&cmd);
   return result;
 }

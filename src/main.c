@@ -6,7 +6,7 @@
 #include "ffmpeg-io/writer.h"
 
 void usage(FILE* f, const char* cmd) {
-  fprintf(f, "USAGE: %s [-i:w INPUT_WIDTH] [-i:h INPUT_HEIGHT] [-i:f INPUT_FORMAT] [-o:w OUTPUT_WIDTH] [-o:h OUTPUT_HEIGHT] [-o:f OUTPUT_FORMAT] INPUT_FILE OUTPUT_FILE\n", cmd);
+  fprintf(f, "USAGE: %s [-f INPUT_DEVICE_FORMAT] [-i:w INPUT_WIDTH] [-i:h INPUT_HEIGHT] [-i:f INPUT_FORMAT] [-o:w OUTPUT_WIDTH] [-o:h OUTPUT_HEIGHT] [-o:f OUTPUT_FORMAT] INPUT_FILE OUTPUT_FILE\n", cmd);
 }
 
 int main(int argc, char *argv[]) {
@@ -24,7 +24,13 @@ int main(int argc, char *argv[]) {
   const char* input = NULL;
   const char* output = NULL;
   while (*arg != NULL) {
-    if (strcmp(*arg, "-i:w") == 0) {
+    if (strcmp(*arg, "-f") == 0) {
+      if (*++arg == NULL) {
+        usage(stderr, argv[0]);
+        return 1;
+      }
+      reader.input.fileformat = ffmpeg_str2fileformat(*arg);
+    } else if (strcmp(*arg, "-i:w") == 0) {
       if (*++arg == NULL) {
         usage(stderr, argv[0]);
         return 1;

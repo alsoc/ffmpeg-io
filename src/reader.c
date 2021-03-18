@@ -96,6 +96,12 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   ffmpeg_formatter_init(&cmd);
 
   ffmpeg_formatter_append(&cmd, "exec %s -loglevel error", ffmpeg);
+  if (h->input.fileformat.s[0] != '\0') {
+    ffmpeg_formatter_append(&cmd, " -f %s", ffmpeg_fileformat2str(&h->input.fileformat));
+  }
+  if (h->input.codec.s[0] != '\0') {
+    ffmpeg_formatter_append(&cmd, " -vcodec %s", ffmpeg_codec2str(&h->input.codec));
+  }
   if (iframerate.num > 0 && iframerate.den > 0) {
     if (image_sequence) {
       ffmpeg_formatter_append(&cmd, " -framerate %d/%d", iframerate.num, iframerate.den);
@@ -119,7 +125,17 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
     filter_prefix = ",";
   }
 
-  ffmpeg_formatter_append(&cmd, " -f image2pipe -vcodec rawvideo -pix_fmt %s - </dev/null", pixfmt);
+  {
+    const char* format = "image2pipe";
+    const char* codec = "rawvideo";
+    if (h->output.fileformat.s[0] != '\0') {
+      format = ffmpeg_fileformat2str(&h->output.fileformat);
+    }
+    if (h->output.codec.s[0] != '\0') {
+      codec = ffmpeg_codec2str(&h->output.codec);
+    }
+    ffmpeg_formatter_append(&cmd, " -f %s -vcodec %s -pix_fmt %s - </dev/null", format, codec, pixfmt);
+  }
 
   if (opts->debug) printf("cmd: %s\n", cmd.str);
 

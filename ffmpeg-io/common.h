@@ -8,11 +8,14 @@ extern "C" {
 #endif
 
 typedef struct ffmpeg_pixfmt {
-  char s[16];
+  char s[32];
 } ffmpeg_pixfmt;
 typedef struct ffmpeg_codec {
-  char s[8];
+  char s[32];
 } ffmpeg_codec;
+typedef struct ffmpeg_fileformat {
+  char s[32];
+} ffmpeg_fileformat;
 
 typedef enum ffmpeg_error {
   ffmpeg_noerror = 0,
@@ -52,6 +55,8 @@ typedef struct ffmpeg_descriptor {
   unsigned width, height;
   ffmpeg_ratio framerate;
   ffmpeg_pixfmt pixfmt;
+  ffmpeg_codec codec;
+  ffmpeg_fileformat fileformat;
 } ffmpeg_descriptor;
 typedef struct ffmpeg_handle {
   FILE* pipe;
@@ -60,11 +65,9 @@ typedef struct ffmpeg_handle {
 } ffmpeg_handle;
 typedef struct ffmpeg_options {
   const char* window_title;
-  const char* file_format;
   const char* ffmpeg_path;
   const char* ffprobe_path;
   const char* ffplay_path;
-  ffmpeg_codec codec;
   unsigned infinite_buffer:1;
   unsigned debug:1;
   unsigned force_input_framerate:1;
@@ -80,6 +83,8 @@ const char* ffmpeg_pixfmt2str(const ffmpeg_pixfmt*);
 ffmpeg_pixfmt ffmpeg_str2pixfmt(const char*);
 const char* ffmpeg_codec2str(const ffmpeg_codec*);
 ffmpeg_codec ffmpeg_str2codec(const char*);
+const char* ffmpeg_fileformat2str(const ffmpeg_fileformat*);
+ffmpeg_fileformat ffmpeg_str2fileformat(const char*);
 const char* ffmpeg_error2str(ffmpeg_error);
 
 void ffmpeg_init(ffmpeg_handle*);

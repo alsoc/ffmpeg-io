@@ -2,7 +2,7 @@
 #include "ffmpeg-io/common.h"
 
 typedef struct ffmpeg_pixel_format {
-  char name[16];
+  char name[32];
   char spec[8];
   int channels, bits;
 } ffmpeg_pixel_format;
@@ -251,9 +251,9 @@ ffmpeg_pixfmt ffmpeg_str2pixfmt(const char* str) {
   }
   return fmt;
 }
-const char* ffmpeg_codec2str(const ffmpeg_codec* fmt) {
-  if (fmt->s[0] == '\0') return "raw";
-  return fmt->s;
+const char* ffmpeg_codec2str(const ffmpeg_codec* codec) {
+  if (codec->s[0] == '\0') return "raw";
+  return codec->s;
 }
 ffmpeg_codec ffmpeg_str2codec(const char* str) {
   ffmpeg_codec codec;
@@ -261,14 +261,24 @@ ffmpeg_codec ffmpeg_str2codec(const char* str) {
   if (str != NULL) {
     if (strcmp(str, "raw") == 0 || strcmp(str, "rawvideo") == 0) {
       str = NULL;
-    } else if (strcmp(str, "lossless") == 0) {
-      str = "ffv1";
     }
   }
   if (str != NULL ) {
     strncpy(codec.s, str, sizeof(codec.s)-1);
   }
   return codec;
+}
+const char* ffmpeg_fileformat2str(const ffmpeg_fileformat* fmt) {
+  if (fmt->s[0] == '\0') return "[undefined]";
+  return fmt->s;
+}
+ffmpeg_fileformat ffmpeg_str2fileformat(const char* str) {
+  ffmpeg_fileformat fmt;
+  memset(&fmt, 0, sizeof(fmt));
+  if (str != NULL ) {
+    strncpy(fmt.s, str, sizeof(fmt.s)-1);
+  }
+  return fmt;
 }
 
 const char* ffmpeg_error2str(ffmpeg_error err) {
