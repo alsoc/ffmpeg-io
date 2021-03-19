@@ -8,7 +8,6 @@ extern "C" {
 #endif
 
 int ffmpeg_start_writer_cmd_raw(ffmpeg_handle*, const char* cmd);
-int ffmpeg_start_writer_cmd(ffmpeg_handle*, const char* filename, const char* left, const char* middle, const char* right, const ffmpeg_options* /* = NULL */);
 int ffmpeg_start_writer(ffmpeg_handle*, const char* filename, const ffmpeg_options* /* = NULL */);
 int ffmpeg_write_raw(ffmpeg_handle*, size_t size, size_t nmemb, const void*);
 int ffmpeg_write1d(ffmpeg_handle*, const uint8_t* data, size_t pitch);

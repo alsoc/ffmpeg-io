@@ -68,6 +68,10 @@ typedef struct ffmpeg_options {
   const char* ffmpeg_path;
   const char* ffprobe_path;
   const char* ffplay_path;
+  const char* extra_general_options;
+  const char* extra_input_options;
+  const char* extra_filter_options;
+  const char* extra_output_options;
   unsigned infinite_buffer:1;
   unsigned debug:1;
   unsigned force_input_framerate:1;

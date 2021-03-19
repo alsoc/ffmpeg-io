@@ -9,7 +9,6 @@ extern "C" {
 
 int ffmpeg_probe(ffmpeg_handle*, const char* filename, const ffmpeg_options* /* = NULL */);
 int ffmpeg_start_reader_cmd_raw(ffmpeg_handle*, const char* cmd);
-int ffmpeg_start_reader_cmd(ffmpeg_handle*, const char* filename, const char* left, const char* middle, const char* right, const ffmpeg_options* /* = NULL */);
 int ffmpeg_start_reader(ffmpeg_handle*, const char* filename, const ffmpeg_options* /* = NULL */);
 int ffmpeg_read_raw(ffmpeg_handle*, size_t size, size_t nmemb, void*);
 int ffmpeg_read1d(ffmpeg_handle*, uint8_t* data, size_t pitch);

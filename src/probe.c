@@ -229,8 +229,17 @@ int ffmpeg_probe(ffmpeg_handle* h, const char* filename, const ffmpeg_options* o
   ffmpeg_formatter cmd;
   ffmpeg_formatter_init(&cmd);
   ffmpeg_formatter_append(&cmd, "%s -v quiet -show_streams", ffprobe);
+  if (opts->extra_general_options != NULL) {
+    ffmpeg_formatter_append(&cmd, " %s", opts->extra_general_options);
+  }
   if (h->input.fileformat.s[0] != '\0') {
     ffmpeg_formatter_append(&cmd, " -f %s", ffmpeg_fileformat2str(&h->input.fileformat));
+  }
+  if (h->input.codec.s[0] != '\0') {
+    ffmpeg_formatter_append(&cmd, " -vcodec %s", ffmpeg_codec2str(&h->input.codec));
+  }
+  if (opts->extra_input_options != NULL) {
+    ffmpeg_formatter_append(&cmd, " %s", opts->extra_input_options);
   }
   ffmpeg_formatter_append(&cmd, " '%s'", filename);
 

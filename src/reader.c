@@ -21,43 +21,6 @@ int ffmpeg_start_reader_cmd_raw(ffmpeg_handle* h, const char* command) {
   ffmpeg_formatter_fini(&cmd);
   return success;
 }
-int ffmpeg_start_reader_cmd(ffmpeg_handle* h, const char* filename, const char* left, const char* middle, const char* right, const ffmpeg_options* opts) {
-  ffmpeg_merge_descriptor(&h->output, &h->input);
-  if (!ffmpeg_valid_descriptor(&h->input, &h->error)) return 0;
-  const char* pixfmt = ffmpeg_pixfmt2str(&h->output.pixfmt);
-
-  const char* ffmpeg = opts->ffmpeg_path;
-  if (ffmpeg == NULL) ffmpeg = get_ffmpeg();
-  if (ffmpeg == NULL) {
-    h->error = ffmpeg_missing_ffmpeg;
-    return 0;
-  }
-
-  ffmpeg_formatter cmd;
-  ffmpeg_formatter_init(&cmd);
-  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error", ffmpeg);
-  if (left != NULL) {
-    ffmpeg_formatter_append(&cmd, " %s", left);
-  }
-  ffmpeg_formatter_append(&cmd, " -i '%s'", filename);
-  if (middle != NULL) {
-    ffmpeg_formatter_append(&cmd, " %s", middle);
-  }
-  ffmpeg_formatter_append(&cmd, " -f image2pipe -vcodec rawvideo -pix_fmt %s -", pixfmt);
-  if (right != NULL) {
-    ffmpeg_formatter_append(&cmd, " %s", right);
-  }
-  ffmpeg_formatter_append(&cmd, " </dev/null");
-
-  h->pipe = popen(cmd.str, "r");
-  int success = 1;
-  if (!h->pipe) {
-    h->error = ffmpeg_pipe_error;
-    success = 0;
-  }
-  ffmpeg_formatter_fini(&cmd);
-  return success;
-}
 int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_options* opts) {
   static const ffmpeg_options no_opts;
   if (opts == NULL) opts = &no_opts;
@@ -96,6 +59,9 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   ffmpeg_formatter_init(&cmd);
 
   ffmpeg_formatter_append(&cmd, "exec %s -loglevel error", ffmpeg);
+  if (opts->extra_general_options != NULL) {
+    ffmpeg_formatter_append(&cmd, " %s", opts->extra_general_options);
+  }
   if (h->input.fileformat.s[0] != '\0') {
     ffmpeg_formatter_append(&cmd, " -f %s", ffmpeg_fileformat2str(&h->input.fileformat));
   }
@@ -108,6 +74,9 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
     } else if (opts->force_input_framerate) {
       ffmpeg_formatter_append(&cmd, " -r %d/%d", iframerate.num, iframerate.den);
     }
+  }
+  if (opts->extra_input_options != NULL) {
+    ffmpeg_formatter_append(&cmd, " %s", opts->extra_input_options);
   }
   ffmpeg_formatter_append(&cmd, " -i '%s'", filename);
 
@@ -124,6 +93,9 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
     }
     filter_prefix = ",";
   }
+  if (opts->extra_filter_options != NULL) {
+    ffmpeg_formatter_append(&cmd, "%s%s", filter_prefix, opts->extra_filter_options);
+  }
 
   {
     const char* format = "image2pipe";
@@ -134,7 +106,11 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
     if (h->output.codec.s[0] != '\0') {
       codec = ffmpeg_codec2str(&h->output.codec);
     }
-    ffmpeg_formatter_append(&cmd, " -f %s -vcodec %s -pix_fmt %s - </dev/null", format, codec, pixfmt);
+    ffmpeg_formatter_append(&cmd, " -f %s -vcodec %s -pix_fmt %s", format, codec, pixfmt);
+    if (opts->extra_output_options != NULL) {
+      ffmpeg_formatter_append(&cmd, " %s", opts->extra_output_options);
+    }
+    ffmpeg_formatter_append(&cmd, " - </dev/null");
   }
 
   if (opts->debug) printf("cmd: %s\n", cmd.str);

@@ -33,7 +33,14 @@ int ffmpeg_start_player(ffmpeg_handle* h, const ffmpeg_options* opts) {
   if (h->input.codec.s[0] != '\0') {
     codec = ffmpeg_codec2str(&h->input.codec);
   }
-  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error -f %s -vcodec %s -pixel_format %s -video_size %dx%d", ffplay, format, codec, ffmpeg_pixfmt2str(&pixfmt), width, height);
+  ffmpeg_formatter_append(&cmd, "exec %s -loglevel error", ffplay);
+  if (opts->extra_general_options != NULL) {
+    ffmpeg_formatter_append(&cmd, " %s", opts->extra_general_options);
+  }
+  ffmpeg_formatter_append(&cmd, " -f %s -vcodec %s -pixel_format %s -video_size %dx%d", format, codec, ffmpeg_pixfmt2str(&pixfmt), width, height);
+  if (opts->extra_input_options != NULL) {
+    ffmpeg_formatter_append(&cmd, " %s", opts->extra_input_options);
+  }
 
   if (opts->window_title != NULL) {
     ffmpeg_formatter_append(&cmd, " -window_title '%s'", opts->window_title);
