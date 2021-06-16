@@ -144,7 +144,6 @@ static const char* read_section(stream_section* sec, const char* str) {
       sec->width = strtol(str, (char**)&str, 10);
       str = eat_spaces(str);
       if (sec->width == 0 || !ffmpeg_iseol(*str)) {
-        abort();
         sec->error = ffmpeg_ffprobe_invalid_statement;
         return NULL;
       }
@@ -181,7 +180,11 @@ static const char* read_section(stream_section* sec, const char* str) {
       } else {
         sec->framerate.den = 1;
       }
-      if (sec->framerate.num == 0 || sec->framerate.den == 0 || !ffmpeg_iseol(*str)) {
+      if (sec->framerate.num == 0 || sec->framerate.den == 0) {
+        sec->framerate.num = 1;
+        sec->framerate.den = 1;
+      }
+      if (!ffmpeg_iseol(*str)) {
         sec->error = ffmpeg_ffprobe_invalid_statement;
         return NULL;
       }
