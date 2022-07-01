@@ -111,6 +111,12 @@ typedef struct ffmpeg_options {
   const char* ffmpeg_path;
   const char* ffprobe_path;
   const char* ffplay_path;
+  const char* extra_general_options;
+  const char* extra_input_options;
+  const char* extra_filter_options;
+  const char* extra_output_options;
+  unsigned threads_input;
+  unsigned threads_output;
   unsigned infinite_buffer:1;
   unsigned debug:1;
   unsigned force_input_framerate:1;
@@ -166,7 +172,8 @@ At the end, you must stop the reader with `ffmpeg_stop_reader`.
     If you want to reintrepret to succession of frames at an exact frame rate, you should set this option.
     Note that this is just a reintrepretation of the timestamp of each frame and no frame is actually dropped nor duplicated.
     If you want to drop/duplicate frames to reach another framerate, you should set `ffmpeg_handle.output.framerate` instead.
-
+- `ffmpeg_options.threads_input`: if you want to set the maximal number of threads for the decoding part.
+- `ffmpeg_options.threads_output`: if you want to set the maximal number of threads for the encoding part.
 ### Reader example
 
 ```c
@@ -234,6 +241,8 @@ You can also set a different pixel format, width and height than your input desc
 
 - `ffmpeg_options.keep_aspect`: when rescaling, if the target resolution has not the same aspect ratio as the input resolution, cropping is adding on top to keep the same aspect for the content.
 - `ffmpeg_options.lossless`: choose a lossless codec if possible (and if the codec is not manually set). `.mkv` and `.avi` are known to have lossless codecs available.
+- `ffmpeg_options.threads_input`: if you want to set the maximal number of threads for the decoding part.
+- `ffmpeg_options.threads_output`: if you want to set the maximal number of threads for the encoding part.
 
 ### Example
 
