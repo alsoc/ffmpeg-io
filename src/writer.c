@@ -78,6 +78,9 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
       ffmpeg_formatter_append(&cmd, " -framerate %d/%d", iframerate.num, iframerate.den);
     }
   }
+  if (opts->threads_input) {
+    ffmpeg_formatter_append(&cmd, " -threads %u", opts->threads_input);
+  }
   if (opts->extra_input_options != NULL) {
     ffmpeg_formatter_append(&cmd, " %s", opts->extra_input_options);
   }
@@ -108,6 +111,9 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   }
   if (strcmp(ifmt, ofmt) != 0) {
     ffmpeg_formatter_append(&cmd, " -pix_fmt %s", ofmt);
+  }
+  if (opts->threads_outputs) {
+    ffmpeg_formatter_append(&cmd, " -threads %u", opts->threads_outputs);
   }
   if (opts->extra_output_options != NULL) {
     ffmpeg_formatter_append(&cmd, " %s", opts->extra_output_options);
