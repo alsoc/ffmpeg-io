@@ -110,8 +110,8 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
       codec = ffmpeg_codec2str(&h->output.codec);
     }
     ffmpeg_formatter_append(&cmd, " -f %s -vcodec %s -pix_fmt %s", format, codec, pixfmt);
-    if (opts->threads_outputs) {
-        ffmpeg_formatter_append(&cmd, " -threads %u", opts->threads_outputs);
+    if (opts->threads_output) {
+        ffmpeg_formatter_append(&cmd, " -threads %u", opts->threads_output);
     }
     if (opts->extra_output_options != NULL) {
       ffmpeg_formatter_append(&cmd, " %s", opts->extra_output_options);

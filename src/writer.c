@@ -112,8 +112,8 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   if (strcmp(ifmt, ofmt) != 0) {
     ffmpeg_formatter_append(&cmd, " -pix_fmt %s", ofmt);
   }
-  if (opts->threads_outputs) {
-    ffmpeg_formatter_append(&cmd, " -threads %u", opts->threads_outputs);
+  if (opts->threads_output) {
+    ffmpeg_formatter_append(&cmd, " -threads %u", opts->threads_output);
   }
   if (opts->extra_output_options != NULL) {
     ffmpeg_formatter_append(&cmd, " %s", opts->extra_output_options);
