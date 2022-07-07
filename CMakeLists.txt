@@ -37,8 +37,8 @@ set(LIBRARY_OUTPUT_PATH ${lib_dir})
 add_library(ffmpeg-io-obj OBJECT ${src_files})
 set_target_properties(ffmpeg-io-obj PROPERTIES POSITION_INDEPENDENT_CODE ON) # set -fpic
 # library
-add_library(ffmpeg-io-static-lib STATIC $<TARGET_OBJECTS:ffmpeg-io-obj>)
-set_target_properties(ffmpeg-io-static-lib PROPERTIES OUTPUT_NAME ffmpeg-io POSITION_INDEPENDENT_CODE ON) # set -fpic
+add_library(ffmpeg-io-slib STATIC $<TARGET_OBJECTS:ffmpeg-io-obj>)
+set_target_properties(ffmpeg-io-slib PROPERTIES OUTPUT_NAME ffmpeg-io POSITION_INDEPENDENT_CODE ON) # set -fpic
 # executable
 add_executable(ffmpeg-io-exe ${src_dir}/main.c $<TARGET_OBJECTS:ffmpeg-io-obj>)
 set_target_properties(ffmpeg-io-exe PROPERTIES OUTPUT_NAME ffmpeg-io-test POSITION_INDEPENDENT_CODE ON) # set -fpie
@@ -46,9 +46,9 @@ set_target_properties(ffmpeg-io-exe PROPERTIES OUTPUT_NAME ffmpeg-io-test POSITI
 # Set include directory -------------------------------------------------------
 # -----------------------------------------------------------------------------
 target_include_directories(ffmpeg-io-obj PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${inc_dir}/>)
-target_include_directories(ffmpeg-io-static-lib PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${inc_dir}/>)
+target_include_directories(ffmpeg-io-slib PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${inc_dir}/>)
 target_include_directories(ffmpeg-io-exe PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${inc_dir}/>)
 
 # Export target ---------------------------------------------------------------
 # -----------------------------------------------------------------------------
-export(TARGETS ffmpeg-io-static-lib NAMESPACE ffmpeg-io:: FILE "${lib_dir}/cmake/ffmpeg-io/ffmpeg-io-config.cmake")
+export(TARGETS ffmpeg-io-slib NAMESPACE ffmpeg-io:: FILE "${lib_dir}/cmake/ffmpeg-io/ffmpeg-io-config.cmake")
