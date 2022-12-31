@@ -1,11 +1,11 @@
 #include <string.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "constants.h"
 #include "cmd.h"
 #include "formatter.h"
 #include "ffmpeg-io/reader.h"
-
 
 int ffmpeg_start_reader_cmd_raw(ffmpeg_handle* h, const char* command) {
   ffmpeg_formatter cmd;
@@ -75,6 +75,15 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
       ffmpeg_formatter_append(&cmd, " -r %d/%d", iframerate.num, iframerate.den);
     }
   }
+  if (image_sequence && opts->start_number) {
+    ffmpeg_formatter_append(&cmd, " -start_number %u", opts->start_number);
+  }
+  if (!image_sequence && opts->start_number) {
+    float ss = (float)opts->start_number / (float)iframerate.num;
+    assert(iframerate.den == 1);
+    ffmpeg_formatter_append(&cmd, " -ss %f", ss);
+  }
+
   if (opts->threads_input) {
     ffmpeg_formatter_append(&cmd, " -threads %u", opts->threads_input);
   }
@@ -111,7 +120,10 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
     }
     ffmpeg_formatter_append(&cmd, " -f %s -vcodec %s -pix_fmt %s", format, codec, pixfmt);
     if (opts->threads_output) {
-        ffmpeg_formatter_append(&cmd, " -threads %u", opts->threads_output);
+      ffmpeg_formatter_append(&cmd, " -threads %u", opts->threads_output);
+    }
+    if (opts->vframes) {
+      ffmpeg_formatter_append(&cmd, " -frames:v %u", opts->vframes);
     }
     if (opts->extra_output_options != NULL) {
       ffmpeg_formatter_append(&cmd, " %s", opts->extra_output_options);

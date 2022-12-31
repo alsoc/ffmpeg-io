@@ -74,6 +74,8 @@ typedef struct ffmpeg_options {
   const char* extra_output_options;
   unsigned threads_input;
   unsigned threads_output;
+  unsigned start_number;
+  unsigned vframes;
   unsigned infinite_buffer:1;
   unsigned debug:1;
   unsigned force_input_framerate:1;
