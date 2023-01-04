@@ -40,6 +40,16 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   for (char const* c = filename; *c != '\0'; ++c) {
     if (*c == '.') dot = c;
   }
+  static const char*const image_exts[] = {".png", ".pgm", ".pbm", ".ppm", ".bmp", ".jpg", ".jpeg", ".tiff", ".webp", NULL};
+  const char*const* image_ext = image_exts;
+  int image_sequence = 0;
+  while (*image_ext != NULL) {
+    if (strcmp(dot, *image_ext) == 0) {
+      image_sequence = 1;
+      break;
+    }
+    ++image_ext;
+  }
   const char* codec = NULL;
   if (h->output.codec.s[0] != '\0') {
     codec = ffmpeg_codec2str(&h->output.codec);
@@ -118,7 +128,11 @@ int ffmpeg_start_writer(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   if (opts->extra_output_options != NULL) {
     ffmpeg_formatter_append(&cmd, " %s", opts->extra_output_options);
   }
-  ffmpeg_formatter_append(&cmd, " -start_number 0 '%s'", filename);
+  if (image_sequence && opts->start_number) {
+    ffmpeg_formatter_append(&cmd, " -start_number %u '%s'", opts->start_number, filename);
+  } else {
+    ffmpeg_formatter_append(&cmd, " -start_number 0 '%s'", filename);
+  }
   if (opts->debug) printf("cmd: %s\n", cmd.str);
 
   h->pipe = popen(cmd.str, "w");
