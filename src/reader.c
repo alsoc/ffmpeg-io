@@ -59,6 +59,16 @@ int ffmpeg_start_reader(ffmpeg_handle* h, const char* filename, const ffmpeg_opt
   ffmpeg_formatter_init(&cmd);
 
   ffmpeg_formatter_append(&cmd, "exec %s -loglevel error", ffmpeg);
+  switch (opts->hwaccel_dec) {
+    case ffmpeg_hwaccel_nvdec:
+      ffmpeg_formatter_append(&cmd, " %s", " -hwaccel nvdec");
+      break;
+    case ffmpeg_hwaccel_videotoolbox:
+      ffmpeg_formatter_append(&cmd, " %s", " -hwaccel videotoolbox");
+      break;
+    default:
+    break;
+  }
   if (opts->extra_general_options != NULL) {
     ffmpeg_formatter_append(&cmd, " %s", opts->extra_general_options);
   }

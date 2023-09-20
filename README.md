@@ -106,8 +106,15 @@ Few notable options:
 - `debug`: prints in stderr the actual and complete commands used
 - `start_number`: number of the first frame to start
 - `vframes`: number of frames to process
+- `hwaccel`: specify the decoding HW acceleration (by default it is performed in SW)
 
 ```c
+typedef enum ffmpeg_hwaccel_dec {
+    ffmpeg_hwaccel_none = 0, // No HW acceleration (= SW decoding)
+    ffmpeg_hwaccel_nvdec, // Nvidia GPU HW acceleration
+    ffmpeg_hwaccel_videotoolbox, // Apple lib for HW acceleration
+} ffmpeg_hwaccel;
+
 typedef struct ffmpeg_options {
   const char* window_title;
   const char* ffmpeg_path;
@@ -126,6 +133,7 @@ typedef struct ffmpeg_options {
   unsigned force_input_framerate:1;
   unsigned lossless:1;
   unsigned keep_aspect:1;
+  enum ffmpeg_hwaccel_dec hwaccel_dec;
 } ffmpeg_options;
 
 void ffmpeg_options_init(ffmpeg_options*);

@@ -48,6 +48,12 @@ typedef enum ffmpeg_error {
   ffmpeg_unknown_error,
 } ffmpeg_error;
 
+typedef enum ffmpeg_hwaccel_dec {
+    ffmpeg_hwaccel_none = 0,
+    ffmpeg_hwaccel_nvdec,
+    ffmpeg_hwaccel_videotoolbox,
+} ffmpeg_hwaccel_dec;
+
 typedef struct ffmpeg_ratio {
   unsigned num, den;
 } ffmpeg_ratio;
@@ -81,6 +87,7 @@ typedef struct ffmpeg_options {
   unsigned force_input_framerate:1;
   unsigned lossless:1;
   unsigned keep_aspect:1;
+  enum ffmpeg_hwaccel_dec hwaccel_dec;
 } ffmpeg_options;
 
 size_t ffmpeg_pixel_bitsize(ffmpeg_pixfmt);
